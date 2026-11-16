@@ -1,0 +1,15 @@
+---
+author: Chloe Alimurong, Sophia Meyers & Evelyn Zhong
+date: November 16, 2026
+output: rmdformats::readthedown
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+# Introduction
+
+# Methods
+
+# Results
+
+# Discussion
