@@ -6,9 +6,192 @@ editor_options:
   markdown: 
     wrap: 72
 ---
-# Introduction
+# 1. Introduction
 
-# Methods
+Alcohol-impaired driving is a persistent and preventable public health problem. According to the U.S. Department of Transportation, almost 30 people die each day, about one every 51 minutes, in motor vehicle crashes involving an alcohol-impaired driver, and many more are injured. The National Highway Traffic Safety Administration estimates that the economic impact of alcohol-related crashes exceeds $59 billion annually. This analysis examines the City of Philadelphia, using all car crashes recorded by the Pennsylvania Department of Transportation for 2008–2012 and made available through OpenDataPhilly. Because the crashes are geocoded, they were spatially joined to 2000 Census block group data. After removing 9,896 crashes in non-residential block groups, the analysis sample contains 43,364 crashes.
+
+The goal is to identify predictors of whether a crash involved a drinking driver. Crashes involving a fatality or major injury, an overturned vehicle, speeding, or aggressive driving may be more likely when the driver is impaired, since alcohol reduces judgment, coordination, and reaction time. Cell phone use may be more closely tied to distraction than to impairment, so its association is less clear. Crashes involving drivers aged 16–17 may be less likely to involve alcohol because these drivers are below the legal drinking age, although underage drinking remains a possibility. A similar relationship may exist for drivers aged 65 and older, although this association is less certain. At the neighborhood level, the percentage of residents with a bachelor's degree and median household income may relate to drinking patterns, nightlife exposure, and access to alternatives to driving. Because the dependent variable (DRINKING_D) is binary, we use R to run a logistic regression of DRINKING_D on these predictors.
+
+# 2. Methods
+
+## 2a. Problems with OLS When the Dependent Variable Is Binary
+
+Ordinary least squares (OLS) is designed for continuous outcomes. Applying it to a binary dependent variable (the "linear probability model") causes several problems:
+
+1. **Limited interpretation and functional form.** OLS coefficients in a linear probability model represent the change in predicted probability associated with a one-unit increase in a predictor. However, this assumes that the probability changes by a constant amount regardless of the starting probability, which may not accurately represent the relationship between predictors and binary outcomes.
+
+2. **Impossible predictions.** OLS fitted values range from negative infinity to positive infinity, so they can fall below 0 or above 1 and cannot always be interpreted as probabilities.
+
+3. **Non-normal errors.** For a given set of predictor values, Y can only equal 0 or 1, so the residual can take only two values and cannot be normally distributed.
+
+4. **Heteroscedasticity.** The variance of a binary outcome is $p(1-p)$, which depends on the predictors through $p$. The constant-variance assumption is therefore violated by construction.
+
+5. **Unrealistic functional form.** OLS assumes the probability changes by a constant amount per unit of $x$. In reality, probabilities level off as they approach 0 or 1.
+
+What we need is a "translator" function that takes any value from negative infinity to positive infinity (the output of a linear model) and returns a value between 0 and 1. As the linear predictor approaches negative infinity, the probability should approach 0, and as the linear predictor approaches positive infinity, the probability should approach 1.
+
+## 2b. How Logistic Regression Addresses These Issues
+
+### i. Odds and Odds Ratios
+
+Logistic regression models the *odds* of the event rather than its probability directly. If $p = P(Y=1)$, the odds are:
+
+$$
+\text{odds} = \frac{p}{1-p} =
+\frac{\text{number of crashes with the event}}{\text{number of crashes without the event}}
+$$
+
+For example, $p = 0.20$ gives odds of $0.20/0.80 = 0.25$, or 1 to 4. The natural log of the odds, $\ln\left(\frac{p}{1-p}\right)$, is called the log odds or logit.
+
+An **odds ratio (OR)** is the ratio of the odds of the event under two conditions, for example the odds of a drinking-driver crash when a binary predictor equals 1 divided by the odds when it equals 0. It is interpreted as follows:
+
+- OR = 1: no association between the predictor and the outcome.
+- OR > 1: the predictor is associated with higher odds of the outcome.
+- OR < 1: the predictor is associated with lower odds of the outcome.
+
+For a continuous predictor, the OR is the multiplicative factor by which the odds change for a one-unit increase in the predictor, holding the other predictors constant. A one-unit increase corresponds to an $(OR - 1) \times 100\%$ change in the odds, not the probability.
+
+### ii. The Logit and Logistic Equations
+
+Let $p = P(\text{DRINKING\_D} = 1)$. Statisticians generally use two translator functions of this kind, the probit and the logit. The differences between the two are subtle, and this analysis uses the logit.
+
+The model in **logit form** is:
+
+$$
+\begin{aligned}
+\ln\left(\frac{p}{1-p}\right) =\;&
+\beta_0
++ \beta_1\text{FATAL\_OR\_M}
++ \beta_2\text{OVERTURNED}
++ \beta_3\text{CELL\_PHONE} \\
+&+ \beta_4\text{SPEEDING}
++ \beta_5\text{AGGRESSIVE}
++ \beta_6\text{DRIVER1617} \\
+&+ \beta_7\text{DRIVER65PLUS}
++ \beta_8\text{PCTBACHMOR}
++ \beta_9\text{MEDHHINC}
+\end{aligned}
+$$
+
+Solving for $p$ gives the **logistic form** (also called the inverse logit):
+
+$$
+p =
+\frac{e^{\beta_0 + \beta_1\text{FATAL\_OR\_M} + \cdots + \beta_9\text{MEDHHINC}}}
+{1 + e^{\beta_0 + \beta_1\text{FATAL\_OR\_M} + \cdots + \beta_9\text{MEDHHINC}}}
+$$
+
+Equivalently:
+
+$$
+p = \frac{1}{1 + e^{-\left(\beta_0 + \beta_1\text{FATAL\_OR\_M} + \cdots + \beta_9\text{MEDHHINC}\right)}}
+$$
+
+**Terms:**
+
+- $p$ is the probability that a crash involves a drinking driver.
+- $\frac{p}{1-p}$ is the odds of that event, and $\ln\left(\frac{p}{1-p}\right)$ is the log odds (logit).
+- $\beta_0$ is the intercept, the log odds of a drinking-driver crash when all predictors equal 0.
+- Each $\beta_j$ ($j = 1,\dots,9$) is the change in the log odds of a drinking-driver crash for a one-unit increase in that predictor, holding the other predictors constant. Exponentiating it, $e^{\beta_j}$, gives the odds ratio.
+- FATAL_OR_M, OVERTURNED, CELL_PHONE, SPEEDING, AGGRESSIVE, DRIVER1617, and DRIVER65PLUS are binary indicators (1 = yes, 0 = no). PCTBACHMOR and MEDHHINC are continuous.
+
+**The logit and logistic functions.** The logit maps a probability in $(0,1)$ onto the whole real line, which lets us model it as a linear combination of predictors. The logistic function is its inverse and maps any real number back to $(0,1)$.
+
+The logistic function works well for binary outcomes because:
+
+- When $\beta_0 + \sum \beta_j x_j = 0$, $p = 0.5$.
+- As the linear predictor gets very large, $p$ approaches 1, and as it gets very small, $p$ approaches 0. Its output always lies between 0 and 1, so fitted values are valid probabilities.
+- It is S-shaped, with the steepest slope around a predicted probability of 0.5. This means that changes in the linear predictor have the greatest effect on predicted probability near the middle of the probability range, while their effect diminishes as probabilities approach 0 or 1.
+- It is monotonic, so a positive $\beta_j$ raises $p$ and a negative one lowers it, holding all other predictors constant.
+
+**Estimation.** The coefficients are estimated by maximum likelihood estimation (MLE). The likelihood function $L$ is the probability of observing the particular set of dependent-variable values $(y_1, y_2, \dots, y_n)$ in the sample. MLE finds the $\beta$ coefficients that maximize the log of $L$ (easier to work with than $L$ itself).
+
+## 2c. Hypotheses Tested for Each Predictor
+
+For each predictor $j$, the hypotheses are:
+
+$$
+H_0: \beta_j = 0 \;(OR_j = 1)
+\quad \text{vs.} \quad
+H_a: \beta_j \neq 0 \;(OR_j \neq 1)
+$$
+
+The null states that, controlling for the other predictors, the predictor is not associated with the odds of a drinking-driver crash. Each hypothesis is tested with the Wald statistic:
+
+$$
+z_j = \frac{\hat{\beta}_j}{SE(\hat{\beta}_j)}
+$$
+
+which follows a standard normal distribution under $H_0$, so p-values are obtained from the standard normal (z) distribution. A p-value below 0.05 is evidence to reject $H_0$.
+
+Because coefficients are on the log-odds scale and are hard to interpret directly, most statisticians prefer to look at odds ratios, which are calculated by exponentiating the coefficients ($e^{\hat{\beta}_j}$), together with 95% confidence intervals. A confidence interval for an OR that includes 1 is consistent with a non-significant predictor.
+
+## 2d. Assessing Model Fit
+
+**R-squared.** An R-squared (for example, Nagelkerke's pseudo-R²; Nagelkerke, 1991) can be calculated for logistic regression. However, unlike in OLS, it cannot be interpreted as the percentage of variance explained by the model and is rarely used.
+
+**Akaike Information Criterion (AIC).** The AIC is a measure that balances a model's goodness of fit against its number of parameters:
+
+$$
+AIC = 2k - 2\ln\hat{L}
+$$
+
+where $k$ is the number of estimated parameters and $\hat{L}$ is the maximized likelihood. It is used to compare models fit to the same data, and **lower AIC values indicate a better model**.
+
+**Fitted values and cut-offs.** As in OLS, the residual is $\epsilon_i = y_i - \hat{y}_i$. In logistic regression, the fitted value $\hat{y}_i$ is the predicted probability that $Y_i = 1$:
+
+$$
+\hat{y}_i =
+\frac{e^{\hat{\beta}_0 + \hat{\beta}_1x_{1i} + \cdots + \hat{\beta}_kx_{ki}}}
+{1 + e^{\hat{\beta}_0 + \hat{\beta}_1x_{1i} + \cdots + \hat{\beta}_kx_{ki}}}
+$$
+
+A good model predicts a high probability of $Y = 1$ for crashes where $Y$ is actually 1, and a low probability where $Y$ is actually 0. To judge this, we choose a cut-off value $c$: if $\hat{y}_i \geq c$ the crash is classified as a drinking-driver crash, and otherwise it is not. Comparing predicted and actual values gives four counts: true positives (TP), true negatives (TN), false positives (FP), and false negatives (FN).
+
+- **Sensitivity** (true positive rate) $= \frac{TP}{TP + FN}$: the proportion of actual drinking-driver crashes that are correctly identified. Higher is better.
+- **Specificity** (true negative rate) $= \frac{TN}{TN + FP}$: the proportion of actual non-drinking-driver crashes that are correctly identified. Higher is better.
+- **Misclassification rate** $= \frac{FP + FN}{TP + TN + FP + FN}$: the proportion of all crashes that are classified incorrectly. Lower is better.
+
+**Why try multiple cut-offs.** The conventional cut-off of 0.5 is arbitrary. When the event is uncommon, few or no fitted probabilities may reach 0.5, so almost no crashes would be classified as drinking-driver crashes and sensitivity would be very low. Raising or lowering the cut-off trades sensitivity against specificity, so we evaluate a range of cut-offs (0.02, 0.03, 0.05, 0.07, 0.08, 0.09, 0.10, 0.15, 0.20, and 0.50) to see how classification performance changes.
+
+**ROC curve.** The Receiver Operating Characteristic (ROC) curve plots sensitivity (the true positive rate) against $1 -$ specificity (the false positive rate) across all possible cut-offs. The 45-degree line represents a "worthless" model, and a curve that bows toward the upper-left corner indicates better discrimination. Two common methods for choosing the optimal cut-off from the ROC curve are:
+
+1. **The Youden index:** the cut-off that maximizes $Sensitivity + Specificity - 1$.
+2. **The minimum distance to the upper-left corner:** the cut-off for which the ROC curve is closest to the point where sensitivity = 1 and specificity = 1.
+
+**In this report, we use the second method, the point on the ROC curve closest to the upper-left corner.**
+
+**Area under the ROC curve (AUC).** The AUC measures the model's discriminatory ability, or how well it distinguishes between drinking-driver and non-drinking-driver crashes. It ranges from 0.5 (the 45-degree line) to 1 (a perfect model). It can be interpreted as the probability that, for two randomly selected crashes where one involved a drinking driver and the other did not, the model assigns a higher predicted probability to the drinking-driver crash. A rough guide to classifying discrimination is:
+
+| AUC | Model quality |
+|:---:|:---|
+| 0.90–1.00 | Excellent |
+| 0.80–0.90 | Good |
+| 0.70–0.80 | Fair |
+| 0.60–0.70 | Poor |
+| 0.50–0.60 | Fail |
+
+These may be somewhat conservative, and some statisticians consider an AUC above 0.7 acceptable.
+
+## 2e. Assumptions of Logistic Regression
+
+**OLS assumptions that also hold for logistic regression:**
+
+- Independence of observations.
+- No severe multicollinearity among the predictors.
+
+**Assumptions specific to logistic regression:**
+
+- The dependent variable must be binary.
+- Logistic regression requires a sufficiently large sample to produce stable maximum likelihood estimates. The necessary sample size depends on the number of predictors, the prevalence of the less common outcome category, and the complexity of the model.
+
+**OLS assumptions that do not hold for logistic regression:**
+
+- There is no assumption of a linear relationship between the dependent variable and each predictor. Instead, for continuous predictors, the log odds of the outcome are assumed to have a linear relationship with each predictor, holding the other predictors constant. This assumption can be evaluated using diagnostic methods or by examining nonlinear terms.
+- There is no assumption of homoscedasticity.
+- Residuals do not need to be normally distributed.
+
+An additional consideration is the potential for spatial dependence. Because multiple crashes can occur within the same census block group, observations may share neighborhood characteristics and therefore may not be completely independent. This could affect the standard errors and statistical significance of the estimated coefficients.
 
 # Results
 
