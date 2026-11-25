@@ -11,6 +11,7 @@ editor_options:
 #| echo: false
 
 library(gmodels)
+library(knitr)
 options(scipen = 999)
 
 df <- read.csv('Logistic_Regression_Data.csv')
@@ -208,7 +209,7 @@ These may be somewhat conservative, and some statisticians consider an AUC above
 An additional consideration is the potential for spatial dependence. Because multiple crashes can occur within the same census block group, observations may share neighborhood characteristics and therefore may not be completely independent. This could affect the standard errors and statistical significance of the estimated coefficients.
 
 ## 2f.
-Upon further inspection of our variables, we have observed that the dependent variable (DRINKING_D) and seven predictors (FATAL_OR_M, OVERTURNED, CELL_PHONE, SPEEDING, AGGRESSIVE, DRIVER1617, DRIVER65PLUS) in our model are binary (categorical) while the of percent of people with a bachelor's degree or higher (PCTBACHMOR) and median household income (MEDHHINC) which are continuous. With this in mind, it is appropriate we apply two tests: the chi-square test and the t-test. For our binary variables, we execute the chi-square test as they are both categorical and the test compares observed cell counts in the cross-tab with the counts expected if the two were independent. For our continuous variables, we execute the t-test to compare the group means when the dependent variable is split into two separate groups of crashes. 
+Examining our variables, we have observed that the dependent variable (DRINKING_D) and seven predictors (FATAL_OR_M, OVERTURNED, CELL_PHONE, SPEEDING, AGGRESSIVE, DRIVER1617, DRIVER65PLUS) in our model are binary (categorical) while the of percent of people with a bachelor's degree or higher (PCTBACHMOR) and median household income (MEDHHINC) which are continuous. With this in mind, it is appropriate we apply two tests: the chi-square test and the t-test. For our binary variables, we execute the chi-square test as they are both categorical and the test compares observed cell counts in the cross-tab with the counts expected if the two were independent. For our continuous variables, we execute the t-test to compare the group means when the dependent variable is split into two separate groups of crashes. 
 
 ### i. Cross-tabulations of the dependent variable with binary predictors
 **Chi-square**
@@ -222,7 +223,7 @@ Our assumptions for the chi-square test are:
 The null hypothesis ($H_0$) states that DRINKING_D and our binary predictors are independent and are not associated. The alternative hypothesis ($H_a$) states that the binary predictors are associated, and not independent of DRINKING_D.
 
 
-## ii. Comparing means of continuous predictors
+### ii. Comparing means of continuous predictors
 **T-test**
 Our assumptions for the t-test are: 
 - The two groups are independent. (We also acknowledge spatial dependence in our analysis as crashes in the same block group may share the same PCTBACHMOR and MEDHHINC values).
@@ -234,7 +235,7 @@ The null hypothesis ($H_0$) states that the mean of each continuous predictor ar
 
 # Results
 ## 3a. Exploratory Analyses
-**Tabulation of the dependent variable**
+### i. Tabulation of the dependent variable
 ```{r}
 #| label: tabulation of the DV
 #| echo: false
@@ -242,10 +243,67 @@ tab <- table(df$DRINKING_D)
 tab
 round(prop.table(tab), 4)
 ```
-**Cross-tabulations with the binary predictors**
-**Means of the continuous predictors**
+### ii. Cross-tabulations with the binary predictors
+```{r}
+#| label: cross-tab with binary predictors
+#| echo: false
 
+tab2b <- do.call(rbind, lapply(binary_vars, function(v) {
+  x  <- table(df[[v]], df$DRINKING_D)
+  ct <- chisq.test(x, correct = FALSE)
+  data.frame(
+    Variable   = v,
+    `No Alcohol N` = x["1", "0"],
+    `No Alcohol %` = round(100 * x["1", "0"] / sum(x[, "0"]), 2),
+    `Alcohol N`    = x["1", "1"],
+    `Alcohol %`    = round(100 * x["1", "1"] / sum(x[, "1"]), 2),
+    `Total N`      = x["1", "0"] + x["1", "1"],
+    `Chi-Sq`       = round(unname(ct$statistic), 2),
+    df             = unname(ct$parameter),
+    `p-value`      = ifelse(ct$p.value < 0.001, "<0.001", round(ct$p.value, 3)),
+    check.names = FALSE, row.names = NULL)
+}))
+kable(tab2b, caption = "Table 1. Cross-tabulation of DRINKING_D with binary predictors")
+```
+### iii. Means of the continuous predictors
+```{r}
+#| label: means of cont. predictors
+#| echo: false
+
+
+tab2c <- do.call(rbind, lapply(c("PCTBACHMOR", "MEDHHINC"), function(v) {
+  m  <- tapply(df[[v]], df$DRINKING_D, mean)
+  s  <- tapply(df[[v]], df$DRINKING_D, sd)
+  tt <- t.test(df[[v]] ~ df$DRINKING_D)
+  data.frame(
+    Variable = v,
+    `Mean (No Alcohol)` = round(unname(m["0"]), 2),
+    `SD (No Alcohol)`   = round(unname(s["0"]), 2),
+    `Mean (Alcohol)`    = round(unname(m["1"]), 2),
+    `SD (Alcohol)`      = round(unname(s["1"]), 2),
+    t                   = round(unname(tt$statistic), 2),
+    df                  = round(unname(tt$parameter), 1),
+    `p-value`           = ifelse(tt$p.value < 0.001, "<0.001", round(tt$p.value, 3)),
+    check.names = FALSE, row.names = NULL)
+}))
+kable(tab2c, caption = "Table 2. Means of continuous predictors by DRINKING_D")
+
+```
 ## 3b. Logistic Regression Assumptions
-**Pearson correlation matrix**
+### i. Pearson correlation matrix
+```{r}
+#| label: pearson corr matrix
+#| echo: false
+
+preds   <- c(binary_vars, "PCTBACHMOR", "MEDHHINC")
+cor_mat <- round(cor(df[, preds], method = "pearson"), 2)
+kable(cor_mat, caption = "Table 3. Pairwise Pearson correlations among predictors")
+
+# for multicollinearity 
+off <- cor_mat; diag(off) <- NA
+max(abs(off), na.rm = TRUE)
+which(abs(off) == max(abs(off), na.rm = TRUE), arr.ind = TRUE)
+
+```
 
 # Discussion
