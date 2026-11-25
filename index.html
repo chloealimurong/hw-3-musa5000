@@ -1215,8 +1215,14 @@ margin-left: 0 !important;
       <li><a href="#d.-assessing-model-fit" id="toc-d.-assessing-model-fit">2d. Assessing Model Fit</a></li>
       <li><a href="#e.-assumptions-of-logistic-regression" id="toc-e.-assumptions-of-logistic-regression">2e. Assumptions of
       Logistic Regression</a></li>
+      <li><a href="#f." id="toc-f.">2f.</a></li>
       </ul></li>
-      <li><a href="#results" id="toc-results">Results</a></li>
+      <li><a href="#results" id="toc-results">Results</a>
+      <ul>
+      <li><a href="#a.-exploratory-analyses" id="toc-a.-exploratory-analyses">3a. Exploratory Analyses</a></li>
+      <li><a href="#b.-logistic-regression-assumptions" id="toc-b.-logistic-regression-assumptions">3b. Logistic
+      Regression Assumptions</a></li>
+      </ul></li>
       <li><a href="#discussion" id="toc-discussion">Discussion</a></li>
       </ul>
     </div>
@@ -1580,9 +1586,456 @@ observations may share neighborhood characteristics and therefore may
 not be completely independent. This could affect the standard errors and
 statistical significance of the estimated coefficients.</p>
 </div>
+<div id="f." class="section level2">
+<h2>2f.</h2>
+<p>Examining our variables, we have observed that the dependent variable
+(DRINKING_D) and seven predictors (FATAL_OR_M, OVERTURNED, CELL_PHONE,
+SPEEDING, AGGRESSIVE, DRIVER1617, DRIVER65PLUS) in our model are binary
+(categorical) while the of percent of people with a bachelor’s degree or
+higher (PCTBACHMOR) and median household income (MEDHHINC) which are
+continuous. With this in mind, it is appropriate we apply two tests: the
+chi-square test and the t-test. For our binary variables, we execute the
+chi-square test as they are both categorical and the test compares
+observed cell counts in the cross-tab with the counts expected if the
+two were independent. For our continuous variables, we execute the
+t-test to compare the group means when the dependent variable is split
+into two separate groups of crashes.</p>
+<div id="i.-cross-tabulations-of-the-dependent-variable-with-binary-predictors" class="section level3">
+<h3>i. Cross-tabulations of the dependent variable with binary
+predictors</h3>
+<p><strong>Chi-square</strong></p>
+<p>Our assumptions for the chi-square test are: - The observations are
+independent. - Both variables are categorical. - The expected count in
+each cell is large enough, commonly at least 5. We have 43,364 crashes
+and the smallest expected count (CELL_PHONE) is 26. - The test reports
+association, not direction or causation.</p>
+<p>The null hypothesis (<span class="math inline">\(H_0\)</span>) states
+that DRINKING_D and our binary predictors are independent and are not
+associated. The alternative hypothesis (<span class="math inline">\(H_a\)</span>) states that the binary predictors
+are associated, and not independent of DRINKING_D.</p>
+</div>
+<div id="ii.-comparing-means-of-continuous-predictors" class="section level3">
+<h3>ii. Comparing means of continuous predictors</h3>
+<p><strong>T-test</strong> Our assumptions for the t-test are: - The two
+groups are independent. (We also acknowledge spatial dependence in our
+analysis as crashes in the same block group may share the same
+PCTBACHMOR and MEDHHINC values). - The predictor variables are
+continuous. - The data in each group are roughly normally distributed
+with a large sample.</p>
+<p>Note: Since we use R’s default for ‘t.test’ (the Welch version), we
+do not need to assume equal variances. The null hypothesis (<span class="math inline">\(H_0\)</span>) states that the mean of each
+continuous predictor are equal for crashes with/without alcohol: <span class="math inline">\(\mu_1 = \mu_0\)</span>. The alternative hypothesis
+(<span class="math inline">\(H_a\)</span>) states that these means
+differ for PCTBACHMOR and MEDHHINC <span class="math inline">\(\mu_1
+\neq \mu_0\)</span>: where <span class="math inline">\(\mu_1\)</span> is
+the mean of PCTBACHMOR/MEDHHINC among crashes where DRINKING_D = 1
+(crashes involving alcohol), and <span class="math inline">\(\mu_0\)</span> is the mean among crashes where
+DRINKING_D = 0 (crashes without alcohol).</p>
+</div>
+</div>
 </div>
 <div id="results" class="section level1">
 <h1>Results</h1>
+<div id="a.-exploratory-analyses" class="section level2">
+<h2>3a. Exploratory Analyses</h2>
+<div id="i.-tabulation-of-the-dependent-variable" class="section level3">
+<h3>i. Tabulation of the dependent variable</h3>
+<table>
+<caption>Distribution of DRINKING_D</caption>
+<thead>
+<tr class="header">
+<th align="left">DRINKING_D</th>
+<th align="right">Crashes</th>
+<th align="right">Share (%)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">0</td>
+<td align="right">40879</td>
+<td align="right">94.3</td>
+</tr>
+<tr class="even">
+<td align="left">1</td>
+<td align="right">2485</td>
+<td align="right">5.7</td>
+</tr>
+</tbody>
+</table>
+<p>Of the 43,364 crashes, 40,879 (94.3%) did not involve alcohol and
+2,485 (5.7%) were drunk driving crashes.</p>
+</div>
+<div id="ii.-cross-tabulations-with-the-binary-predictors" class="section level3">
+<h3>ii. Cross-tabulations with the binary predictors</h3>
+<table>
+<caption>Table 1. Cross-tabulation of DRINKING_D with binary
+predictors</caption>
+<colgroup>
+<col width="15%" />
+<col width="15%" />
+<col width="15%" />
+<col width="11%" />
+<col width="11%" />
+<col width="9%" />
+<col width="8%" />
+<col width="3%" />
+<col width="9%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Variable</th>
+<th align="right">No Alcohol N</th>
+<th align="right">No Alcohol %</th>
+<th align="right">Alcohol N</th>
+<th align="right">Alcohol %</th>
+<th align="right">Total N</th>
+<th align="right">Chi-Sq</th>
+<th align="right">df</th>
+<th align="left">p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">FATAL_OR_M</td>
+<td align="right">1181</td>
+<td align="right">2.89</td>
+<td align="right">188</td>
+<td align="right">7.57</td>
+<td align="right">1369</td>
+<td align="right">167.56</td>
+<td align="right">1</td>
+<td align="left">&lt;0.001</td>
+</tr>
+<tr class="even">
+<td align="left">OVERTURNED</td>
+<td align="right">612</td>
+<td align="right">1.50</td>
+<td align="right">110</td>
+<td align="right">4.43</td>
+<td align="right">722</td>
+<td align="right">122.79</td>
+<td align="right">1</td>
+<td align="left">&lt;0.001</td>
+</tr>
+<tr class="odd">
+<td align="left">CELL_PHONE</td>
+<td align="right">426</td>
+<td align="right">1.04</td>
+<td align="right">28</td>
+<td align="right">1.13</td>
+<td align="right">454</td>
+<td align="right">0.16</td>
+<td align="right">1</td>
+<td align="left">0.687</td>
+</tr>
+<tr class="even">
+<td align="left">SPEEDING</td>
+<td align="right">1261</td>
+<td align="right">3.08</td>
+<td align="right">260</td>
+<td align="right">10.46</td>
+<td align="right">1521</td>
+<td align="right">376.78</td>
+<td align="right">1</td>
+<td align="left">&lt;0.001</td>
+</tr>
+<tr class="odd">
+<td align="left">AGGRESSIVE</td>
+<td align="right">18522</td>
+<td align="right">45.31</td>
+<td align="right">916</td>
+<td align="right">36.86</td>
+<td align="right">19438</td>
+<td align="right">67.60</td>
+<td align="right">1</td>
+<td align="left">&lt;0.001</td>
+</tr>
+<tr class="even">
+<td align="left">DRIVER1617</td>
+<td align="right">674</td>
+<td align="right">1.65</td>
+<td align="right">12</td>
+<td align="right">0.48</td>
+<td align="right">686</td>
+<td align="right">20.45</td>
+<td align="right">1</td>
+<td align="left">&lt;0.001</td>
+</tr>
+<tr class="odd">
+<td align="left">DRIVER65PLUS</td>
+<td align="right">4237</td>
+<td align="right">10.36</td>
+<td align="right">119</td>
+<td align="right">4.79</td>
+<td align="right">4356</td>
+<td align="right">80.60</td>
+<td align="right">1</td>
+<td align="left">&lt;0.001</td>
+</tr>
+</tbody>
+</table>
+<p>Table 1 reports a chi-square test of independence between each binary
+predictor and DRINKING_D. For six of the seven predictors, we reject the
+null hypothesis of no association (all p &lt; 0.001): FATAL_OR_M,
+OVERTURNED, SPEEDING, AGGRESSIVE, DRIVER1617 and DRIVER65PLUS. For
+CELL_PHONE, we fail to reject (χ²(1) = 0.16, p = 0.687), so we find no
+evidence of an association between cell phone use and alcohol
+involvement. This does not show that no association exists.</p>
+<p>The percentage columns give the direction of each association.
+FATAL_OR_M (7.57% vs. 2.89%), OVERTURNED (4.43% vs. 1.50%) and SPEEDING
+(10.46% vs. 3.08%) are more common among alcohol crashes than
+non-alcohol crashes. AGGRESSIVE (36.86% vs. 45.31%), DRIVER1617 (0.48%
+vs. 1.65%) and DRIVER65PLUS (4.79% vs. 10.36%) are less common among
+alcohol crashes. By chi-square statistic, SPEEDING has the strongest
+association (376.78), followed by FATAL_OR_M (167.56), and DRIVER1617
+has the weakest significant association (20.45). AGGRESSIVE is the most
+common predictor overall (19,438 crashes), but it is less common in
+alcohol crashes.</p>
+</div>
+<div id="iii.-means-of-the-continuous-predictors" class="section level3">
+<h3>iii. Means of the continuous predictors</h3>
+<table>
+<caption>Table 2. Means of continuous predictors by DRINKING_D</caption>
+<colgroup>
+<col width="11%" />
+<col width="19%" />
+<col width="17%" />
+<col width="15%" />
+<col width="13%" />
+<col width="6%" />
+<col width="7%" />
+<col width="8%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">Variable</th>
+<th align="right">Mean (No Alcohol)</th>
+<th align="right">SD (No Alcohol)</th>
+<th align="right">Mean (Alcohol)</th>
+<th align="right">SD (Alcohol)</th>
+<th align="right">t</th>
+<th align="right">df</th>
+<th align="right">p-value</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">PCTBACHMOR</td>
+<td align="right">16.57</td>
+<td align="right">18.21</td>
+<td align="right">16.61</td>
+<td align="right">18.72</td>
+<td align="right">-0.11</td>
+<td align="right">2777.5</td>
+<td align="right">0.914</td>
+</tr>
+<tr class="even">
+<td align="left">MEDHHINC</td>
+<td align="right">31483.05</td>
+<td align="right">16930.10</td>
+<td align="right">31998.75</td>
+<td align="right">17810.50</td>
+<td align="right">-1.41</td>
+<td align="right">2763.9</td>
+<td align="right">0.160</td>
+</tr>
+</tbody>
+</table>
+<p>Table 2 compares the two continuous predictors with two-sample
+t-tests. Mean PCTBACHMOR is 16.57 for non-alcohol crashes and 16.61 for
+alcohol crashes (t = −0.11, df = 2,777.5, p = 0.914). Mean MEDHHINC is
+31,483.05 for non-alcohol crashes and 31,998.75 for alcohol crashes (t =
+−1.41, df = 2,763.9, p = 0.160). For both, we fail to reject the null
+hypothesis of equal means, so we find no evidence that average
+neighborhood education or income differs between crashes with and
+without alcohol.</p>
+</div>
+</div>
+<div id="b.-logistic-regression-assumptions" class="section level2">
+<h2>3b. Logistic Regression Assumptions</h2>
+<div id="i.-pearson-correlation-matrix-and-assumptions" class="section level3">
+<h3>i. Pearson correlation matrix and assumptions</h3>
+<table style="width:100%;">
+<caption>Table 3. Pairwise Pearson correlations among
+predictors</caption>
+<colgroup>
+<col width="11%" />
+<col width="10%" />
+<col width="10%" />
+<col width="10%" />
+<col width="8%" />
+<col width="10%" />
+<col width="10%" />
+<col width="11%" />
+<col width="10%" />
+<col width="8%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left"></th>
+<th align="right">FATAL_OR_M</th>
+<th align="right">OVERTURNED</th>
+<th align="right">CELL_PHONE</th>
+<th align="right">SPEEDING</th>
+<th align="right">AGGRESSIVE</th>
+<th align="right">DRIVER1617</th>
+<th align="right">DRIVER65PLUS</th>
+<th align="right">PCTBACHMOR</th>
+<th align="right">MEDHHINC</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">FATAL_OR_M</td>
+<td align="right">1.00</td>
+<td align="right">0.03</td>
+<td align="right">0.00</td>
+<td align="right">0.08</td>
+<td align="right">-0.01</td>
+<td align="right">0.00</td>
+<td align="right">-0.01</td>
+<td align="right">-0.01</td>
+<td align="right">-0.02</td>
+</tr>
+<tr class="even">
+<td align="left">OVERTURNED</td>
+<td align="right">0.03</td>
+<td align="right">1.00</td>
+<td align="right">0.00</td>
+<td align="right">0.06</td>
+<td align="right">0.02</td>
+<td align="right">0.00</td>
+<td align="right">-0.02</td>
+<td align="right">0.01</td>
+<td align="right">0.03</td>
+</tr>
+<tr class="odd">
+<td align="left">CELL_PHONE</td>
+<td align="right">0.00</td>
+<td align="right">0.00</td>
+<td align="right">1.00</td>
+<td align="right">0.00</td>
+<td align="right">-0.03</td>
+<td align="right">0.00</td>
+<td align="right">0.00</td>
+<td align="right">0.00</td>
+<td align="right">0.00</td>
+</tr>
+<tr class="even">
+<td align="left">SPEEDING</td>
+<td align="right">0.08</td>
+<td align="right">0.06</td>
+<td align="right">0.00</td>
+<td align="right">1.00</td>
+<td align="right">0.21</td>
+<td align="right">0.02</td>
+<td align="right">-0.03</td>
+<td align="right">0.00</td>
+<td align="right">0.01</td>
+</tr>
+<tr class="odd">
+<td align="left">AGGRESSIVE</td>
+<td align="right">-0.01</td>
+<td align="right">0.02</td>
+<td align="right">-0.03</td>
+<td align="right">0.21</td>
+<td align="right">1.00</td>
+<td align="right">0.03</td>
+<td align="right">0.02</td>
+<td align="right">0.03</td>
+<td align="right">0.04</td>
+</tr>
+<tr class="even">
+<td align="left">DRIVER1617</td>
+<td align="right">0.00</td>
+<td align="right">0.00</td>
+<td align="right">0.00</td>
+<td align="right">0.02</td>
+<td align="right">0.03</td>
+<td align="right">1.00</td>
+<td align="right">-0.02</td>
+<td align="right">0.00</td>
+<td align="right">0.02</td>
+</tr>
+<tr class="odd">
+<td align="left">DRIVER65PLUS</td>
+<td align="right">-0.01</td>
+<td align="right">-0.02</td>
+<td align="right">0.00</td>
+<td align="right">-0.03</td>
+<td align="right">0.02</td>
+<td align="right">-0.02</td>
+<td align="right">1.00</td>
+<td align="right">0.03</td>
+<td align="right">0.05</td>
+</tr>
+<tr class="even">
+<td align="left">PCTBACHMOR</td>
+<td align="right">-0.01</td>
+<td align="right">0.01</td>
+<td align="right">0.00</td>
+<td align="right">0.00</td>
+<td align="right">0.03</td>
+<td align="right">0.00</td>
+<td align="right">0.03</td>
+<td align="right">1.00</td>
+<td align="right">0.48</td>
+</tr>
+<tr class="odd">
+<td align="left">MEDHHINC</td>
+<td align="right">-0.02</td>
+<td align="right">0.03</td>
+<td align="right">0.00</td>
+<td align="right">0.01</td>
+<td align="right">0.04</td>
+<td align="right">0.02</td>
+<td align="right">0.05</td>
+<td align="right">0.48</td>
+<td align="right">1.00</td>
+</tr>
+</tbody>
+</table>
+<p>Assessing the assumptions of logistic regression:</p>
+<ul>
+<li><strong>Binary outcome (met).</strong> DRINKING_D is coded 1 for a
+crash involving alcohol and 0 otherwise.</li>
+<li><strong>Independence (at risk).</strong> Crashes in the same block
+group share neighborhood characteristics, and MEDHHINC and PCTBACHMOR
+are measured at the block group level, so each value repeats across
+every crash in that block group. Observations are therefore unlikely to
+be fully independent, and standard errors may be too small.</li>
+<li><strong>Sample size (met).</strong> There are 43,364 crashes and
+2,485 alcohol crashes, which is about 276 events per predictor for our 9
+predictors.</li>
+<li><strong>No severe multicollinearity (met).</strong> See 3b-ii.</li>
+<li><strong>Linearity of the logit for MEDHHINC and PCTBACHMOR, and no
+influential outliers (not yet assessed).</strong> These can only be
+checked on a fitted model, so we assess them with the model diagnostics
+in the logistic regression results.</li>
+</ul>
+<p>There are potential limitations of using Pearson correlations to
+measure the associations between binary predictors. Since the Pearson
+correlations are made for continuous variables, binary variables are
+treated as a number (0 or 1) and ignores the categorical relationship
+(e.g. speeding or not speeding.) For two binary variables, the maximum
+possible |r| depends on how common each one is. If one variable is rare
+(e.g. 3% of crashes) and the other is common (e.g. 40%), r can’t get
+close to 1, even when the two are strongly related. So a low r doesn’t
+prove a weak association. We do have rare variables like DRIVER1617,
+OVERTURNED and CELL_PHONE. It also means low correlations among them can
+understate the dependence, and that multicollinearity could be
+missed.</p>
+</div>
+<div id="ii.-multicollinearity" class="section level3">
+<h3>ii. Multicollinearity</h3>
+<p>We use an absolute correlation of 0.70 as the threshold for
+multicollinearity. The largest absolute correlation among the predictors
+is 0.48 (positive), between MEDHHINC and PCTBACHMOR, which is below the
+threshold. The largest correlation among the binary predictors is 0.21
+(SPEEDING and AGGRESSIVE). We therefore find no evidence of severe
+multicollinearity.</p>
+</div>
+</div>
 </div>
 <div id="discussion" class="section level1">
 <h1>Discussion</h1>

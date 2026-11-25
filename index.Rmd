@@ -233,17 +233,27 @@ Our assumptions for the t-test are:
 Note: Since we use R's default for 't.test' (the Welch version), we do not need to assume equal variances. 
 The null hypothesis ($H_0$) states that the mean of each continuous predictor are equal for crashes with/without alcohol: $\mu_1 = \mu_0$. The alternative hypothesis ($H_a$) states that these means differ for PCTBACHMOR and MEDHHINC $\mu_1 \neq \mu_0$: where $\mu_1$ is the mean of PCTBACHMOR/MEDHHINC among crashes where DRINKING_D = 1 (crashes involving alcohol), and $\mu_0$ is the mean among crashes where DRINKING_D = 0 (crashes without alcohol).
 
-# Results
+# 3. Results
+
 ## 3a. Exploratory Analyses
+
 ### i. Tabulation of the dependent variable
+
 ```{r}
 #| label: tabulation of the DV
 #| echo: false
 tab <- table(df$DRINKING_D)
-tab
-round(prop.table(tab), 4)
+kable(data.frame(DRINKING_D = names(tab),
+                 Crashes    = as.integer(tab),
+                 `Share (%)` = round(100 * as.numeric(prop.table(tab)), 1),
+                 check.names = FALSE),
+      caption = "Distribution of DRINKING_D")
 ```
+
+Of the 43,364 crashes, 40,879 (94.3%) did not involve alcohol and 2,485 (5.7%) were drunk driving crashes.
+
 ### ii. Cross-tabulations with the binary predictors
+
 ```{r}
 #| label: cross-tab with binary predictors
 #| echo: false
@@ -265,11 +275,16 @@ tab2b <- do.call(rbind, lapply(binary_vars, function(v) {
 }))
 kable(tab2b, caption = "Table 1. Cross-tabulation of DRINKING_D with binary predictors")
 ```
+
+Table 1 reports a chi-square test of independence between each binary predictor and DRINKING_D. For six of the seven predictors, we reject the null hypothesis of no association (all p < 0.001): FATAL_OR_M, OVERTURNED, SPEEDING, AGGRESSIVE, DRIVER1617 and DRIVER65PLUS. For CELL_PHONE, we fail to reject (χ²(1) = 0.16, p = 0.687), so we find no evidence of an association between cell phone use and alcohol involvement. This does not show that no association exists.
+
+The percentage columns give the direction of each association. FATAL_OR_M (7.57% vs. 2.89%), OVERTURNED (4.43% vs. 1.50%) and SPEEDING (10.46% vs. 3.08%) are more common among alcohol crashes than non-alcohol crashes. AGGRESSIVE (36.86% vs. 45.31%), DRIVER1617 (0.48% vs. 1.65%) and DRIVER65PLUS (4.79% vs. 10.36%) are less common among alcohol crashes. By chi-square statistic, SPEEDING has the strongest association (376.78), followed by FATAL_OR_M (167.56), and DRIVER1617 has the weakest significant association (20.45). AGGRESSIVE is the most common predictor overall (19,438 crashes), but it is less common in alcohol crashes.
+
 ### iii. Means of the continuous predictors
+
 ```{r}
 #| label: means of cont. predictors
 #| echo: false
-
 
 tab2c <- do.call(rbind, lapply(c("PCTBACHMOR", "MEDHHINC"), function(v) {
   m  <- tapply(df[[v]], df$DRINKING_D, mean)
@@ -287,23 +302,42 @@ tab2c <- do.call(rbind, lapply(c("PCTBACHMOR", "MEDHHINC"), function(v) {
     check.names = FALSE, row.names = NULL)
 }))
 kable(tab2c, caption = "Table 2. Means of continuous predictors by DRINKING_D")
-
 ```
+
+Table 2 compares the two continuous predictors with two-sample t-tests. Mean PCTBACHMOR is 16.57 for non-alcohol crashes and 16.61 for alcohol crashes (t = −0.11, df = 2,777.5, p = 0.914). Mean MEDHHINC is 31,483.05 for non-alcohol crashes and 31,998.75 for alcohol crashes (t = −1.41, df = 2,763.9, p = 0.160). For both, we fail to reject the null hypothesis of equal means, so we find no evidence that average neighborhood education or income differs between crashes with and without alcohol.
+
 ## 3b. Logistic Regression Assumptions
-### i. Pearson correlation matrix
+
+### i. Pearson correlation matrix and assumptions
+
 ```{r}
 #| label: pearson corr matrix
 #| echo: false
-
 preds   <- c(binary_vars, "PCTBACHMOR", "MEDHHINC")
 cor_mat <- round(cor(df[, preds], method = "pearson"), 2)
 kable(cor_mat, caption = "Table 3. Pairwise Pearson correlations among predictors")
+```
 
-# for multicollinearity 
+```{r}
+#| label: max correlation
+#| include: false
 off <- cor_mat; diag(off) <- NA
 max(abs(off), na.rm = TRUE)
 which(abs(off) == max(abs(off), na.rm = TRUE), arr.ind = TRUE)
-
 ```
 
-# Discussion
+Assessing the assumptions of logistic regression:
+
+- **Binary outcome (met).** DRINKING_D is coded 1 for a crash involving alcohol and 0 otherwise.
+- **Independence (at risk).** Crashes in the same block group share neighborhood characteristics, and MEDHHINC and PCTBACHMOR are measured at the block group level, so each value repeats across every crash in that block group. Observations are therefore unlikely to be fully independent, and standard errors may be too small.
+- **Sample size (met).** There are 43,364 crashes and 2,485 alcohol crashes, which is about 276 events per predictor for our 9 predictors.
+- **No severe multicollinearity (met).** See 3b-ii.
+- **Linearity of the logit for MEDHHINC and PCTBACHMOR, and no influential outliers (not yet assessed).** These can only be checked on a fitted model, so we assess them with the model diagnostics in the logistic regression results.
+
+There are potential limitations of using Pearson correlations to measure the associations between binary predictors. Since the Pearson correlations are made for continuous variables, binary variables are treated as a number (0 or 1) and ignores the categorical relationship (e.g. speeding or not speeding.) For two binary variables, the maximum possible |r| depends on how common each one is. If one variable is rare (e.g. 3% of crashes) and the other is common (e.g. 40%), r can't get close to 1, even when the two are strongly related. So a low r doesn't prove a weak association. We do have rare variables like DRIVER1617, OVERTURNED and CELL_PHONE. It also means low correlations among them can understate the dependence, and that multicollinearity could be missed.
+
+### ii. Multicollinearity
+
+We use an absolute correlation of 0.70 as the threshold for multicollinearity. The largest absolute correlation among the predictors is 0.48 (positive), between MEDHHINC and PCTBACHMOR, which is below the threshold. The largest correlation among the binary predictors is 0.21 (SPEEDING and AGGRESSIVE). We therefore find no evidence of severe multicollinearity.
+
+# 4. Discussion
