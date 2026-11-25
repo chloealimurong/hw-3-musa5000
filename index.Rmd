@@ -6,6 +6,20 @@ editor_options:
   markdown: 
     wrap: 72
 ---
+```{r}
+#| label: set-up block
+#| echo: false
+
+library(gmodels)
+options(scipen = 999)
+
+df <- read.csv('Logistic_Regression_Data.csv')
+
+binary_vars <- c("FATAL_OR_M", "OVERTURNED", "CELL_PHONE", "SPEEDING",
+                 "AGGRESSIVE", "DRIVER1617", "DRIVER65PLUS")
+cont_vars   <- c("PCTBACHMOR", "MEDHHINC")
+
+```
 # 1. Introduction
 
 According to the U.S. Department of Transportation, almost 30 people die each day, in motor vehicle crashes involving an alcohol-impaired driver, and many more are injured. This analysis examines the City of Philadelphia, using all car crashes recorded by the Pennsylvania Department of Transportation for 2008-12 and made available through OpenDataPhilly. Because the crashes are geocoded, they were spatially joined to 2000 Census block group data. After removing 9,896 crashes in non-residential block groups, the analysis sample contains 43,364 crashes.
@@ -193,6 +207,45 @@ These may be somewhat conservative, and some statisticians consider an AUC above
 
 An additional consideration is the potential for spatial dependence. Because multiple crashes can occur within the same census block group, observations may share neighborhood characteristics and therefore may not be completely independent. This could affect the standard errors and statistical significance of the estimated coefficients.
 
+## 2f.
+Upon further inspection of our variables, we have observed that the dependent variable (DRINKING_D) and seven predictors (FATAL_OR_M, OVERTURNED, CELL_PHONE, SPEEDING, AGGRESSIVE, DRIVER1617, DRIVER65PLUS) in our model are binary (categorical) while the of percent of people with a bachelor's degree or higher (PCTBACHMOR) and median household income (MEDHHINC) which are continuous. With this in mind, it is appropriate we apply two tests: the chi-square test and the t-test. For our binary variables, we execute the chi-square test as they are both categorical and the test compares observed cell counts in the cross-tab with the counts expected if the two were independent. For our continuous variables, we execute the t-test to compare the group means when the dependent variable is split into two separate groups of crashes. 
+
+### i. Cross-tabulations of the dependent variable with binary predictors
+**Chi-square**
+
+Our assumptions for the chi-square test are: 
+- The observations are independent. 
+- Both variables are categorical. 
+- The expected count in each cell is large enough, commonly at least 5. We have 43,364 crashes and the smallest expected count (CELL_PHONE) is 26. 
+- The test reports association, not direction or causation.
+
+The null hypothesis ($H_0$) states that DRINKING_D and our binary predictors are independent and are not associated. The alternative hypothesis ($H_a$) states that the binary predictors are associated, and not independent of DRINKING_D.
+
+
+## ii. Comparing means of continuous predictors
+**T-test**
+Our assumptions for the t-test are: 
+- The two groups are independent. (We also acknowledge spatial dependence in our analysis as crashes in the same block group may share the same PCTBACHMOR and MEDHHINC values).
+- The predictor variables are continuous. 
+- The data in each group are roughly normally distributed with a large sample.
+
+Note: Since we use R's default for 't.test' (the Welch version), we do not need to assume equal variances. 
+The null hypothesis ($H_0$) states that the mean of each continuous predictor are equal for crashes with/without alcohol: $\mu_1 = \mu_0$. The alternative hypothesis ($H_a$) states that these means differ for PCTBACHMOR and MEDHHINC $\mu_1 \neq \mu_0$: where $\mu_1$ is the mean of PCTBACHMOR/MEDHHINC among crashes where DRINKING_D = 1 (crashes involving alcohol), and $\mu_0$ is the mean among crashes where DRINKING_D = 0 (crashes without alcohol).
+
 # Results
+## 3a. Exploratory Analyses
+**Tabulation of the dependent variable**
+```{r}
+#| label: tabulation of the DV
+#| echo: false
+tab <- table(df$DRINKING_D)
+tab
+round(prop.table(tab), 4)
+```
+**Cross-tabulations with the binary predictors**
+**Means of the continuous predictors**
+
+## 3b. Logistic Regression Assumptions
+**Pearson correlation matrix**
 
 # Discussion
